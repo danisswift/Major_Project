@@ -10,7 +10,10 @@ import pygame
 from pygame import mixer
 import time
 
+#global variables
 volume = float(0.5)
+file = None
+filename = ""
 
 #commands for top menu options
 def new_file():
@@ -23,21 +26,6 @@ def new_file():
 
     """
     print("New file")
-
-
-def load_midi():
-    """
-    Load  a pre-saved midi file to work on
-
-    Returns
-    -------
-    A Midi file from the local file area.
-
-    """
-    print("Load midi")
-    
-    file = askopenfilename()
-    return (file)
 
 def save_midi(midi):
     """
@@ -52,7 +40,20 @@ def save_midi(midi):
     None.
 
     """
-    print("Save midi")
+    global file
+    if file == None:
+        return
+    else:
+        try:
+            initial_path = file.split("/")
+            save_path=[]
+            for i in range(len(initial_path)-1):
+                save_path.append(initial_path[i])
+                
+            print(save_path)
+        except Exception as e:
+            print(e)
+        
     
 def upload_file():
     """
@@ -63,7 +64,14 @@ def upload_file():
     None.
 
     """
-    #plot_notes(None)
+    global file
+    global filename
+    file = askopenfilename(initialdir="C:/", title="Select a file")
+    filename = file.split("/")[-1]
+    load_music()
+    print(file)
+    print(filename)
+    
 
 def generate_music(midi):
     """
@@ -116,25 +124,44 @@ def destroy():
     quit()
 
 def load_music():
-    file = askopenfilename(initialdir="C:/", title="Select a file")
-    filename= file.split("/")[-1]
+    """
+
+    Load a sound file (normally a midi file) to be played back
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+
+    """
+    
     
     #print(filename)
     global volume
-    try:
-        mixer.init()
-        mixer.music.load(file)
-        mixer.music.set_volume(volume)
-        mixer.music.play()
-        filename_label.config(fg="blue", text="Now Playing: " + str(filename))
-        volume_label.config(fg="green", text="Current Volume: " + str(volume))
-    except Exception as e:
-        print(e)
-        filename_label.config(fg="red", text="Cannot Play: " + str(filename))
-        time.sleep(3)
-        filename_label.config(fg="blue", text="Now Playing: " + str(filename))
+    global file
+    global filename
+    print(file)
+    if file == None or filename == "":
+        return
+    else:
+        try:
+            mixer.init()
+            mixer.music.load(file)
+            mixer.music.set_volume(volume)
+            mixer.music.play()
+            pause_music()
+            filename_label.config(fg="blue", text="Now Playing: " + str(filename))
+            volume_label.config(fg="green", text="Current Volume: " + str(volume))
+        except Exception as e:
+            print(e)
+            filename_label.config(fg="red", text="Cannot Play: " + str(filename))
+        
 
 def pause_music():
+    #pause loaded audio file
     try:
         mixer.music.pause()
     except Exception as e:
@@ -142,12 +169,14 @@ def pause_music():
 
 
 def play_music():
+    #play loaded audio file
     try:
         mixer.music.unpause()
     except Exception as e:
         print(e)
 
 
+#small functions to adjust volume up and down
 def volume_down():
     global volume
     if volume <= 0:
@@ -174,7 +203,7 @@ def volume_up():
 
 # #create a new window for the applciation
 window = tk.Tk()
-window.title('das82 Guitar Music Generator')
+window.title('das82 Music Generator')
 window.geometry('700x500')
 
 #display area for genrated midi views etc
@@ -196,8 +225,8 @@ volume_down_b.place(relx=0.15, rely=0.39, relwidth=0.2, anchor='w')
 separator = ttk.Separator(window, orient='horizontal')
 separator.place(relx=0, rely=0.47, relwidth=1, relheight=1)
 
-#button to upload music (midi file)
-upload_b = tk.Button(window, text="Upload File", command=lambda: load_music())
+#button to upload music (midi file or mp3)
+upload_b = tk.Button(window, text="Upload File", command=lambda: upload_file())
 upload_b.place(relx=0.12, rely=0.62, relwidth=0.2, relheight=0.2)
 
 #button to generate music from midi
@@ -215,7 +244,7 @@ menubar = tk.Menu(window)
 file_menu = tk.Menu(menubar)
 menubar.add_cascade(label="File", menu=file_menu)
 file_menu.add_command(label="New", command=lambda: new_file())
-file_menu.add_command(label="Load Midi", command=lambda: load_midi())
+file_menu.add_command(label="Load Midi", command=lambda: upload_file())
 file_menu.add_command(label="Save Midi", command=lambda: save_midi(None))
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=lambda: destroy())
